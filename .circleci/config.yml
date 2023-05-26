@@ -61,7 +61,7 @@ jobs:
   lint:
     docker:
       # Use the same Docker base as the project
-      - image: cimg/python:3.8
+      - image: cimg/python:3.8.16
     working_directory: ~/repo
     steps:
       - checkout
@@ -74,6 +74,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
+            python3 --version
             python3 -m venv venv
             . venv/bin/activate
             make install
