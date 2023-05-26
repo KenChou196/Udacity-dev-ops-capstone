@@ -241,10 +241,12 @@ workflows:
       - lint
       - build-docker:
           requires: [lint]
-      - deploy-infrastructure
+      - deploy-infrastructure:
+          requires: [build-docker]
       - deploy-microservices:
           requires: [deploy-infrastructure]
       # - deploy-frontend:
       #     requires: [deploy-infrastructure]
       # - deploy-backend
-      - cleanup
+      - cleanup:
+          requires: [lint, build-docker, deploy-infrastructure]
