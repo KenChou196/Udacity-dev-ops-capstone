@@ -180,6 +180,7 @@ jobs:
       - attach_workspace:
           at: ~/
       - install_awscli
+      - install_kubectl
       - add_ssh_keys:
           fingerprints: ["9f:d7:62:cf:78:04:dc:b9:ff:3f:ff:a1:45:b7:6d:80:75:97:fa:bc"]
       - run:
@@ -189,8 +190,8 @@ jobs:
             # EC2_IP="$(cat inventory.txt)"
             # echo "====> ec2 ip is : $EC2_IP"
             # yes | ssh ubuntu@$EC2_IP
-            # curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-            # kubectl version --client
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+            kubectl version --client
             # kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
             kubectl create deploy python-helloworld --image=kynkyn/python-helloworld:latest
             # kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
