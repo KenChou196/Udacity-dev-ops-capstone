@@ -1,14 +1,6 @@
-- name: log into docker hub registry
-  docker_login:
-    email: "nguyenkaoky.ai1@gmail.com"
-    username: "$DOCKERHUB_USERNAME"
-    password: "$DOCKERHUB_PASS"
 
-- name: ensure a container is running
-  docker_container:
-    name: flask-app-container
-    state: started
-    image: "kynkyn/flask_app_img:latest"
-    pull: true
-    ports:
-      - "8000:80"
+- name: Install Dep and port Forward
+  shell: |
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+    kubectl version --client
+    kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000 

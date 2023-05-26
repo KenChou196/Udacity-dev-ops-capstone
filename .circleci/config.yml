@@ -135,12 +135,12 @@ jobs:
       #       cd services
       #       eksctl create cluster -f cluster.yaml
       - run:
-          name: deploy flask front end infra
+          name: Ensure micro services infrastructure exists
           command: |
             aws cloudformation deploy \
-              --template-file .circleci/files/frontend.yml \
-              --tags project=flask-app \
-              --stack-name "flask-app-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udakynk \
+              --stack-name "micro-services-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - persist_to_workspace:
           root: ~/
@@ -175,27 +175,26 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-  deploy-docker:
+  deploy-microservices:
     docker:
       - image: cimg/base:stable
     steps:
-      - checkout
+      - add_ssh_keys:
+          fingerprints: ["68:b6:9a:55:7a:f2:30:47:60:e4:8b:c4:b5:59:e7:63"]
+      # attach workspace
       - attach_workspace:
           at: ~/
+      - install_node13
       - install_awscli
-      - install_eksctl
-      - install_kubectl
+      - install_ansible
       - run:
           name: Deploy docker image
           command: |
-            ## Assuming the Kubernetes cluster is ready
-            kubectl get nodes
-            ## Deploy an App from the Dockerhub to the Kubernetes Cluster
-            kubectl create deploy flask-app --image=kynkyn/flask_app_img:latest
-            ## See the status
-            kubectl get deploy,rs,svc,pods
-            ## Port forward 
-            # kubectl port-forward pod/python-helloworld-84857d9565-2598m --address 0.0.0.0 5000:5000
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            cd .circleci/ansible
+            echo "------- Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -226,9 +225,11 @@ jobs:
               if [[ "${OldWorkflowID}" != "${CIRCLE_WORKFLOW_ID:0:7}" ]]
               then
                 echo removing resources of OldWorkflowID: "${OldWorkflowID}"
-                aws s3 rm --recursive s3://flask-app-${OldWorkflowID}
-                aws s3 rb --force s3://flask-app-${OldWorkflowID}
-                aws cloudformation delete-stack --stack-name flask-app-frontend-${OldWorkflowID}
+                #aws s3 rm --recursive s3://flask-app-${OldWorkflowID}
+                #aws s3 rb --force s3://flask-app-${OldWorkflowID}
+                #aws cloudformation delete-stack --stack-name flask-app-frontend-${OldWorkflowID}
+
+                aws cloudformation delete-stack --stack-name  micro-services-${OldWorkflowID}
                 echo done removing
               else
                 echo '------------------ this is the current workflow -----------------'
@@ -242,9 +243,11 @@ workflows:
       - lint
       - build-docker:
           requires: [lint]
-      # - deploy-infrastructure
+      - deploy-infrastructure
+      - deploy-microservices:
+          requires: [deploy-infrastructure]
       # - deploy-frontend:
       #     requires: [deploy-infrastructure]
       # - deploy-backend
-      # - cleanup
+      - cleanup
       
