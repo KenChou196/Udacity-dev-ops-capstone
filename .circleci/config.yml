@@ -185,13 +185,15 @@ jobs:
       - run:
           name: Deploy docker image
           command: |
-            cd .circleci/ansible
-            EC2_IP="$(cat inventory.txt)"
-            echo "====> ec2 ip is : $EC2_IP"
-            yes | ssh ubuntu@$EC2_IP
-            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-            kubectl version --client
-            kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000 
+            # cd .circleci/ansible
+            # EC2_IP="$(cat inventory.txt)"
+            # echo "====> ec2 ip is : $EC2_IP"
+            # yes | ssh ubuntu@$EC2_IP
+            # curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+            # kubectl version --client
+            # kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
+            kubectl create deploy python-helloworld --image=kynkyn/python-helloworld:latest
+            kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
