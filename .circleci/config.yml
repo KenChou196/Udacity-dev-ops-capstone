@@ -39,7 +39,7 @@ commands:
           command: |
             sudo apt update
             sudo apt install ansible -y
-  
+
   install_eksctl:
     description: Install eksctl
     steps:
@@ -56,7 +56,6 @@ commands:
           name: get kubectl
           command: |
             curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
-
 jobs:
   lint:
     docker:
@@ -149,7 +148,7 @@ jobs:
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-  
+
   deploy-frontend:
     docker:
       # Docker image here that supports AWS CLI
@@ -184,7 +183,6 @@ jobs:
       # attach workspace
       - attach_workspace:
           at: ~/
-      - install_node13
       - install_awscli
       - install_ansible
       - run:
@@ -250,4 +248,3 @@ workflows:
       #     requires: [deploy-infrastructure]
       # - deploy-backend
       - cleanup
-      
