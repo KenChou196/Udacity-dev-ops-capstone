@@ -16,11 +16,7 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            # aws s3 rm --recursive s3://flask-app-<<parameters.workflow_id>>
-            # aws s3 rb s3://flask-app-<<parameters.workflow_id>> --force
-            # aws cloudformation delete-stack --stack-name "flask-app-backend-<<parameters.workflow_id>>"
-            # aws cloudformation delete-stack --stack-name "flask-app-frontend-<<parameters.workflow_id>>"
-            aws cloudformation delete-stack --stack-name  micro-services-<<parameters.workflow_id>>"
+            aws cloudformation delete-stack --stack-name micro-services-<<parameters.workflow_id>>"
 
   install_awscli:
     description: Install awscli
@@ -129,11 +125,6 @@ jobs:
       # Checkout code from git
       - checkout
       - run: yum install -y tar gzip
-      # - run:
-      #     name: Deploy eks cluster
-      #     command: |
-      #       cd services
-      #       eksctl create cluster -f cluster.yaml
       - run:
           name: Ensure micro services infrastructure exists
           command: |
@@ -145,7 +136,6 @@ jobs:
       - run:
           name: Add ip to ansible inventory
           command: |
-            # Your code here
             cd .circleci/ansible
             cat inventory.txt
             aws ec2 describe-instances \
@@ -190,7 +180,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - add_ssh_keys:
-          fingerprints: ["68:b6:9a:55:7a:f2:30:47:60:e4:8b:c4:b5:59:e7:63"]
+          fingerprints: ["9f:d7:62:cf:78:04:dc:b9:ff:3f:ff:a1:45:b7:6d:80:75:97:fa:bc"]
       # attach workspace
       # Checkout code from git
       - checkout
@@ -198,14 +188,16 @@ jobs:
           at: ~/
       - install_awscli
       - install_ansible
+      - install_kubectl
       - run:
           name: Deploy docker image
           command: |
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            cd .circleci/ansible
-            echo "------- Contents  of the inventory.txt file is -------"
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
+            EC2_IP="$(cat inventory.txt)"
+            ssh ubuntu@EC2_IP
+            echo "====> ec2 ip is : $EC2_IP"
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+            kubectl version --client
+            kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000 
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
