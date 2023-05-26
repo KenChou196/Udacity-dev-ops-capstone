@@ -16,7 +16,7 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name micro-services-<<parameters.workflow_id>>"
+            aws cloudformation delete-stack --stack-name "micro-services-<<parameters.workflow_id>>"
 
   install_awscli:
     description: Install awscli
@@ -185,14 +185,12 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/
-  
       - run:
           name: Deploy docker image
           command: |
-            cd .
             EC2_IP="$(cat inventory.txt)"
-            ssh ubuntu@EC2_IP
             echo "====> ec2 ip is : $EC2_IP"
+            ssh ubuntu@EC2_IP
             curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
             kubectl version --client
             kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000 
@@ -230,7 +228,7 @@ jobs:
                 #aws s3 rb --force s3://flask-app-${OldWorkflowID}
                 #aws cloudformation delete-stack --stack-name flask-app-frontend-${OldWorkflowID}
 
-                aws cloudformation delete-stack --stack-name  micro-services-${OldWorkflowID}
+                aws cloudformation delete-stack --stack-name "micro-services-${OldWorkflowID}"
                 echo done removing
               else
                 echo '------------------ this is the current workflow -----------------'
