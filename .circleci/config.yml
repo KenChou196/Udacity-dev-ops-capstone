@@ -16,10 +16,11 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws s3 rm --recursive s3://flask-app-<<parameters.workflow_id>>
-            aws s3 rb s3://flask-app-<<parameters.workflow_id>> --force
-            aws cloudformation delete-stack --stack-name "flask-app-backend-<<parameters.workflow_id>>"
-            aws cloudformation delete-stack --stack-name "flask-app-frontend-<<parameters.workflow_id>>"
+            # aws s3 rm --recursive s3://flask-app-<<parameters.workflow_id>>
+            # aws s3 rb s3://flask-app-<<parameters.workflow_id>> --force
+            # aws cloudformation delete-stack --stack-name "flask-app-backend-<<parameters.workflow_id>>"
+            # aws cloudformation delete-stack --stack-name "flask-app-frontend-<<parameters.workflow_id>>"
+            aws cloudformation delete-stack --stack-name  micro-services-<<parameters.workflow_id>>"
 
   install_awscli:
     description: Install awscli
@@ -141,6 +142,16 @@ jobs:
               --tags project=udakynk \
               --stack-name "micro-services-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Add ip to ansible inventory
+          command: |
+            # Your code here
+            cd .circleci/ansible
+            cat inventory.txt
+            aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text --filter Name=tag:Name,Values=micro-services-${CIRCLE_WORKFLOW_ID:0:7} >> inventory.txt
+            cat inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
@@ -245,8 +256,5 @@ workflows:
           requires: [build-docker]
       - deploy-microservices:
           requires: [deploy-infrastructure]
-      # - deploy-frontend:
-      #     requires: [deploy-infrastructure]
-      # - deploy-backend
       - cleanup:
-          requires: [lint, build-docker, deploy-infrastructure]
+          requires: [deploy-microservices]
