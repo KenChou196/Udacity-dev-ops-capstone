@@ -174,14 +174,14 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
-      - install_awscli
-      - add_ssh_keys:
-          fingerprints: ["9f:d7:62:cf:78:04:dc:b9:ff:3f:ff:a1:45:b7:6d:80:75:97:fa:bc"]
       # attach workspace
       # Checkout code from git
       - checkout
       - attach_workspace:
           at: ~/
+      - install_awscli
+      - add_ssh_keys:
+          fingerprints: ["9f:d7:62:cf:78:04:dc:b9:ff:3f:ff:a1:45:b7:6d:80:75:97:fa:bc"]
       - run:
           name: Deploy docker image
           command: |
