@@ -193,7 +193,9 @@ jobs:
             # kubectl version --client
             # kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
             kubectl create deploy python-helloworld --image=kynkyn/python-helloworld:latest
-            kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
+            # kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
+            kubectl expose deployment python-helloworld --type=LoadBalancer --name=publicServices --port=5000
+            kubectl get deploy,rs,svc,pods
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
