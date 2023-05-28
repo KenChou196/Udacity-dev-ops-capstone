@@ -3,7 +3,9 @@
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
 version: 2.1
-
+orbs:
+  aws-eks: circleci/aws-eks@2.2.0
+  kubernetes: circleci/kubernetes@1.3
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -170,37 +172,74 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-  deploy-microservices:
+
+  create-cluster:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/python:3.10
     steps:
-      # attach workspace
-      # Checkout code from git
-      - checkout
-      - attach_workspace:
-          at: ~/
-      - install_awscli
-      - install_kubectl
-      - add_ssh_keys:
-          fingerprints: ["9f:d7:62:cf:78:04:dc:b9:ff:3f:ff:a1:45:b7:6d:80:75:97:fa:bc"]
+      - kubernetes/install:
+          kubectl-version: v1.22.0
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: flask-app-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
-          name: Deploy docker image
           command: |
-            # cd .circleci/ansible
-            # EC2_IP="$(cat inventory.txt)"
-            # echo "====> ec2 ip is : $EC2_IP"
-            # yes | ssh ubuntu@$EC2_IP
-            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+            kubectl get services
+          name: Create cluster
+  deployment:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - kubernetes/install:
+          kubectl-version: v1.22.0
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: flask-app-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          command: |
             kubectl version --client
-            # kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
             kubectl create deploy python-helloworld --image=kynkyn/python-helloworld:latest
-            # kubectl port-forward pod/python-helloworld-bf87486d6-xgns8 --address 0.0.0.0 5000:5000
             kubectl expose deployment python-helloworld --type=LoadBalancer --name=publicServices --port=5000
             kubectl get deploy,rs,svc,pods
-      # Here's where you will add some code to rollback on failure
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-
+          name: deployment cluster
+  delete-cluster:
+    docker:
+      # - image: cimg/python:3.10
+      - image: amazon/aws-cli
+    steps:
+      - kubernetes/install:
+          kubectl-version: v1.22.0
+      # - aws-eks/delete-cluster:
+      #     cluster-name: my-eks-demo
+      # - install_awscli
+      - run:
+          command: |
+            # your code here
+            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+                    --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            echo Stack names: "${STACKS[@]}"
+            echo '------------------'
+            export BACKENDSTACKS=($(aws cloudformation describe-stacks --no-paginate --query 'Stacks[?StackName!=`null`]|[?contains(StackName, `flask-app-backend`) == `true`].StackName' --output text))
+            echo List backend stacks: "${BACKENDSTACKS[@]}"
+            echo '--------------------'
+            for BACKENDSTACK in "${BACKENDSTACKS[@]}"
+            do
+              OldWorkflowID=${BACKENDSTACK: -7}
+              echo '--------------------'
+              echo handling cleanup workflowID: "${OldWorkflowID}"
+              if [[ "${OldWorkflowID}" != "${CIRCLE_WORKFLOW_ID:0:7}" ]]
+              then
+                echo removing resources of OldWorkflowID: "${OldWorkflowID}"
+                #aws s3 rm --recursive s3://flask-app-${OldWorkflowID}
+                #aws s3 rb --force s3://flask-app-${OldWorkflowID}
+                #aws cloudformation delete-stack --stack-name flask-app-frontend-${OldWorkflowID}
+                aws cloudformation delete-stack --stack-name "flask-app-${OldWorkflowID}"
+                echo done removing
+              else
+                echo '------------------ this is the current workflow -----------------'
+              fi
+              echo '--------------------'
+            done
+          name: Test cluster
   cleanup:
     docker:
       - image: amazon/aws-cli
@@ -243,11 +282,28 @@ workflows:
   default:
     jobs:
       - lint
-      - build-docker:
-          requires: [lint]
-      - deploy-infrastructure:
-          requires: [build-docker]
-      - deploy-microservices:
-          requires: [deploy-infrastructure]
-      - cleanup:
-          requires: [deploy-microservices]
+      # - build-docker:
+      #     requires: [lint]
+      - aws-eks/create-cluster:
+          cluster-name: my-eks-demo
+      - deployment:
+          requires:
+            - aws-eks/create-cluster
+      # - test-cluster:
+      #     cluster-name: my-eks-demo
+      #     requires:
+      #       - aws-eks/create-cluster
+      # - aws-eks/delete-cluster:
+      #     cluster-name: my-eks-demo
+      #     requires:
+      #       - test-cluster
+      # - deploy-infrastructure:
+      #     requires: [build-docker]
+      # - deploy-microservices:
+      #     requires: [deploy-infrastructure]
+      # # - cleanup:
+      # #     requires: [deploy-microservices]
+      # - aws-eks/delete-cluster:
+      #     cluster-name: my-eks-demo
+      #     requires:
+      #       - test-cluster
