@@ -200,9 +200,8 @@ jobs:
       #     cluster-name: flask-app-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           command: |
-            # kubectl version --client
-            # kubectl create deploy python-helloworld --image=kynkyn/python-helloworld:latest
-            # kubectl expose deployment python-helloworld --type=LoadBalancer --name=public-services --port=5000
+            kubectl version --client
+            kubectl create deploy python-helloworld --image=kynkyn/python-helloworld:latest
             kubectl get deploy,rs,svc,pods
           name: deployment cluster
       - destroy-environment:
@@ -288,19 +287,16 @@ jobs:
 workflows:
   default:
     jobs:
-      # - lint
-      # - build-docker:
-      #     requires: [lint]
-      # - aws-eks/create-cluster:
-      #     cluster-name: my-eks-demo
-
-      # - create-cluster:
-      #     requires:
-      #       - lint
-      # - deployment:
-      #     requires:
-      #       - create-cluster
-      # - cleanup:
-      #     requires:
-      #       - deployment
-      - deployment
+      - lint
+      - build-docker:
+          requires: [lint]
+      - create-cluster:
+          requires:
+            - lint
+            - build-docker
+      - deployment:
+          requires:
+            - create-cluster
+      - cleanup:
+          requires:
+            - deployment
