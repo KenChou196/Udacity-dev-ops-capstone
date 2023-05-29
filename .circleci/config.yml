@@ -194,10 +194,10 @@ jobs:
     docker:
       - image: cimg/python:3.10
     steps:
-      - kubernetes/install:
-          kubectl-version: v1.22.0
-      - aws-eks/update-kubeconfig-with-authenticator:
-          cluster-name: flask-app-${CIRCLE_WORKFLOW_ID:0:7}
+      # - kubernetes/install:
+      #     kubectl-version: v1.22.0
+      # - aws-eks/update-kubeconfig-with-authenticator:
+      #     cluster-name: flask-app-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           command: |
             # kubectl version --client
