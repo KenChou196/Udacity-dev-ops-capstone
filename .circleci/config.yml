@@ -284,7 +284,10 @@ workflows:
       - lint
       # - build-docker:
       #     requires: [lint]
-      - aws-eks/create-cluster:
+      # - aws-eks/create-cluster:
+      #     cluster-name: my-eks-demo
+      
+      - create-cluster:
           cluster-name: my-eks-demo
       - deployment:
           requires:
