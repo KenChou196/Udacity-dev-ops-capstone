@@ -202,7 +202,7 @@ jobs:
           command: |
             kubectl version --client
             kubectl create deploy python-helloworld --image=kynkyn/python-helloworld:latest
-            kubectl expose deployment python-helloworld --type=LoadBalancer --name=publicServices --port=5000
+            kubectl expose deployment python-helloworld --type=LoadBalancer --name=public-services --port=5000
             kubectl get deploy,rs,svc,pods
           name: deployment cluster
       - destroy-environment:
