@@ -270,7 +270,7 @@ jobs:
                 #aws s3 rb --force s3://flask-app-${OldWorkflowID}
                 #aws cloudformation delete-stack --stack-name flask-app-frontend-${OldWorkflowID}
 
-                aws cloudformation delete-stack --stack-name "micro-services-${OldWorkflowID}"
+                aws cloudformation delete-stack --stack-name "flask-app-${OldWorkflowID}"
                 echo done removing
               else
                 echo '------------------ this is the current workflow -----------------'
@@ -287,11 +287,10 @@ workflows:
       # - aws-eks/create-cluster:
       #     cluster-name: my-eks-demo
       
-      - create-cluster:
-          cluster-name: my-eks-demo
+      - create-cluster
       - deployment:
           requires:
-            - aws-eks/create-cluster
+            - create-cluster
       # - test-cluster:
       #     cluster-name: my-eks-demo
       #     requires:
@@ -304,8 +303,9 @@ workflows:
       #     requires: [build-docker]
       # - deploy-microservices:
       #     requires: [deploy-infrastructure]
-      # # - cleanup:
-      # #     requires: [deploy-microservices]
+      - cleanup:
+          requires:
+            - deployment
       # - aws-eks/delete-cluster:
       #     cluster-name: my-eks-demo
       #     requires:
