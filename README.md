@@ -1,3 +1,5 @@
+## Circle CI status:
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/KenChou196/udacity-devops-capstone/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/KenChou196/udacity-devops-capstone/tree/master)
 # Data Engineering API Example
 
 An example project that shows how to create a Data Engineering API around Flask and Pandas:
