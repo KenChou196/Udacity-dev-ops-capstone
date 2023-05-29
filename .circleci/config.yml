@@ -172,7 +172,6 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-
   create-cluster:
     docker:
       - image: cimg/python:3.10
@@ -183,10 +182,14 @@ jobs:
           cluster-name: flask-app-${CIRCLE_WORKFLOW_ID:0:7}
       # - aws-eks/update-kubeconfig-with-authenticator:
       #     cluster-name: flask-app-${CIRCLE_WORKFLOW_ID:0:7}
-      - run:
-          command: |
-            kubectl get services
-          name: Create cluster
+      # - run:
+      #     command: |
+      #       echo 'run '
+      #       # kubectl get services
+      #       kubectl get deploy,rs,svc,pods
+      #     name: Create cluster
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
   deployment:
     docker:
       - image: cimg/python:3.10
@@ -202,6 +205,8 @@ jobs:
             kubectl expose deployment python-helloworld --type=LoadBalancer --name=publicServices --port=5000
             kubectl get deploy,rs,svc,pods
           name: deployment cluster
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
   delete-cluster:
     docker:
       # - image: cimg/python:3.10
@@ -288,11 +293,14 @@ workflows:
       #     requires: [lint]
       # - aws-eks/create-cluster:
       #     cluster-name: my-eks-demo
-      
-      - create-cluster
+
+      - create-cluster:
+          requires:
+            - lint
       - deployment:
           requires:
             - create-cluster
+
       # - test-cluster:
       #     cluster-name: my-eks-demo
       #     requires:
